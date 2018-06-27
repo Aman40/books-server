@@ -1,4 +1,4 @@
-#!/usr/bin/node
+#!/usr/local/bin/node
 const express = require("express");
 const app = express();
 const books = require("./mod_books");
@@ -106,7 +106,14 @@ function send_session_data(req, res){
 	//Could be used to check whether or not the user is logged in.
 	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	req.session.save((err)=>{
-		if(err) throw err;
+		if(err) {
+			console.log(`Error: ${err.message}`)
+			res.write("<msg>Error connection refused</msg>");
+			res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`);
+			res.statusCode = 500;
+			console.log("Sent cookie: "+res.getHeader("Set-Cookie"));
+			res.end("<srv_res_status>1</srv_res_status>"); //OK
+		}
 		if(req.session.uid) {
 
 			let usr_data = {}; //Stringify and send to user.

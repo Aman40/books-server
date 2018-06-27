@@ -1,0 +1,6 @@
+1. :$ heroku create [app_name]
+2. :$ git push heroku master
+3. :$ heroku ps:scale web=1 //To ensure at least one instance is running on the web
+4: :$ heroku open //Opens the website generated. Alternatively, Ctrl + C; Ctrl + v
+//Viewing the logs
+5: :$ heroku logs --tail n

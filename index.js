@@ -79,7 +79,7 @@ app.use("/signup", signup);
 app.use("/log", login);
 app.use("/",send_session_data);
 //Set up routers to each of those modules
-app.listen(8000);
+app.listen(process.env.PORT || 5000);
 //callback for destroying session
 function logout(req, res) {
 	req.session.save((err)=>{

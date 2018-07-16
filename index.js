@@ -1,4 +1,4 @@
-#!/usr/local/bin/node
+#!/usr/bin/node
 const express = require("express");
 const app = express();
 const books = require("./mod_books");
@@ -82,7 +82,7 @@ app.use("/signup", signup);
 app.use("/log", login);
 app.use("/",send_session_data);
 //Set up routers to each of those modules
-app.listen(8000);
+app.listen(80);
 //callback for destroying session
 function logout(req, res) {
 	req.session.save((err)=>{
@@ -149,7 +149,11 @@ function send_session_data(req, res){
 
 }
 function getCurrDate() {
-	let date = new Date();
+	let dt  = new Date();
+	//Get utc time in ms
+	let utc = dt.getTime() + (dt.getTimezoneOffset() * 60000);
+	//Create new date object for offset timezone
+	let date = new Date(utc + (3600000 * 9));
 	//YYYY:MM:DD HH:MM:SS Unix datetime string, mysql compatible
 	let month = date.getMonth();
 	month++; //Javascript month is 0 based. 0=January, 11=December

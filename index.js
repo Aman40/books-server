@@ -34,6 +34,9 @@ const session_options = {
 };
 
 app.use("/", (req, res, next)=>{
+	//Console.log the date and time
+	console.log(getCurrDate());
+	
 	/*Answer the pre-flight request for allowed headers*/
 	res.setHeader("Access-Control-Allow-Origin","http://localhost:3000");
 	res.setHeader("Access-Control-Allow-Credentials",true);
@@ -144,6 +147,32 @@ function send_session_data(req, res){
 		}
 	});
 
+}
+function getCurrDate() {
+	let date = new Date();
+	//YYYY:MM:DD HH:MM:SS Unix datetime string, mysql compatible
+	let month = date.getMonth();
+	month++; //Javascript month is 0 based. 0=January, 11=December
+	if(month<10) {
+		month="0"+month.toString();
+	}
+	let day = date.getDate();
+	if(day<10) {
+		day="0"+day.toString();
+	}
+	let hours = date.getHours();
+	if(hours<10) {
+		hours="0"+hours.toString();
+	}
+	let minutes = date.getMinutes();
+	if(minutes<10) {
+		minutes="0"+minutes.toString();
+	}
+	let seconds = date.getSeconds();
+	if(seconds<10) {
+		seconds="0"+seconds.toString();
+	}
+	return `${date.getFullYear()}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 //if res.getHeader('Set-Cookie') is called too quickly, it returns undefined, which is promptly written
 //to the output. Solution: write something first as some kind of async timeout. By the time it's done,

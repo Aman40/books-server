@@ -155,6 +155,9 @@ router.post("/alter/add", function (req, res) {
             "`Location` , `DateAdded`, `OfferExpiry`, `Thumbnail`) VALUES ?";
 
 		let book_id = genUid("B");
+		// Set the default for when page number is not defined to 0
+		let pages = fields.pages;
+		!pages?pages=0:pages;
 
 		//Modify data for mysql. E.g true/false => 1/0
 		if(!fields.edition) fields.edition=1;
@@ -170,7 +173,7 @@ router.post("/alter/add", function (req, res) {
 			fields.language,
 			fields.description,
 			fields.binding,
-			fields.pages,
+			pages,
 			fields.publisher,
 			fields.published,
 			fields.isbn,
@@ -245,6 +248,9 @@ router.post("/alter/edit", function (req, res) {
 		fields.deliverable = fields.deliverable==="true"?1:0;
 
 		let book_id = fields.book_id;
+		// Set the default for when page number is not defined to 0
+		let pages = fields.pages;
+		!pages?pages=0:pages;
 
 		let sql = "UPDATE Books SET `Title`=?, `Edition`=?, `Authors`=?, `Language`=?, `Description`=?," +
             "`Binding`=?, `PageNo`=?, `Publisher`=?, `Published`=?, `ISBN`=?, `Condition`=?," +
@@ -257,7 +263,7 @@ router.post("/alter/edit", function (req, res) {
 			fields.language,
 			fields.description,
 			fields.binding,
-			fields.pages,
+			pages,
 			fields.publisher,
 			fields.published,
 			fields.isbn,

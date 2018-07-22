@@ -327,11 +327,20 @@ router.use("/alter/delete", function(req, res){
 	 * srv_res_statuses:
 	 * 0. successfully completed
 	 * 1. mysql error with connection to db
+	 * 2. Partial success
+	 * 3. All queries failed
 	 */
 	// res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	// res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
-	let bookIDs = url.parse(req.url, true).query;
-	//Instantiate the BookDeleteManager
+	//Expect a stringified array of bookids to delete
+	//e.g ['bookid1', 'bookid2', ..., 'bookidN']
+	let bookIDs = JSON.parse(url.parse(req.url, true).query);
+	/**
+		 * Instantiate the manager. While the queries are all triggered
+		 * nearly in parallel and asynchronously, they'll still refer
+		 * to the same manager object, thanks to Javascript objects'
+		 * immutability
+		 */
 	let bdm = new BookDeleteManager(bookIDs.length);
 
 	const con = mysql.createConnection({
@@ -348,14 +357,36 @@ router.use("/alter/delete", function(req, res){
 			res.write(JSON.stringify(resObj));
 			res.end();
 		}
-
+		
 		for(let i=0;i<bookIDs.length;i++) {
 			//Delete one by one
 			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
 			con.query(sql, (err, result)=>{
 				if(err) {
 					//Report a failure
-					
+					bdm.failed();
+				} else {
+					//Success
+					bdm.succeeded();
+				}
+				//If all queries are done, return
+				if(bdm.weAreDone()){
+					let resObj = {};
+					if(bdm.counter.failed===0) {
+						//Full success
+						resObj.srv_res_status = 0;
+						resObj.msg = "Full success";
+					} else if(bdm.counter.succeeded===0) {
+						//Full failure
+						resObj.srv_res_status = 3;
+						resObj.msg = "All queries failed";
+					} else {
+						//Partial success or failure. You decide
+						resObj.srv_res_status = 2;
+						resObj.msg = "All queries succeeded";
+					}
+					res.write(JSON.stringify(resObj));
+					res.end();
 				}
 			});
 		}

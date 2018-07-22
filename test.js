@@ -15,6 +15,7 @@ let con = mysql.createConnection({
 });
 //Define the query
 let names = ["Aman", "Meishen", "Rajesh", "Haytham", "Hani", "Anna", "Shaothing", "Lira"];
+let man = new Manager(5);
 for(let i=0;i<5;i++) {
 	let sql = `INSERT INTO test VALUES ('${i}', '${names[i]}')`;
 	console.log(`Running ${i}`);
@@ -22,12 +23,38 @@ for(let i=0;i<5;i++) {
 		console.log(`${i} finished.`);
 		if(err) {
 			console.log("It failed with: "+JSON.stringify(err));
+			man.failed();
 		} else {
 			console.log("It succeeded with: "+JSON.stringify(result));
+			man.succeeded();
 		}
 	});
 }
 
-function Manager(){
-    
+function Manager(total){
+    this.counter = {
+	total: total,
+	completed: 0,
+	succeeded: 0,
+	failed: 0,
+	}
+	this.succeeded = ()=>{
+		this.counter.succeeded++;
+		this.counter.completed++;
+		this.finishIfWeAreDone();
+	}
+	this.failed = ()=>{
+		this.counter.failed++;
+		this.counter.completed++;
+		this.finishIfWeAreDone();
+	}
+	this.weAreDone = ()=>{
+		return this.counter.total === this.counter.completed;
+	}
+	this.finishIfWeAreDone = ()=>{
+		if(this.weAreDone()){
+			console.log("We are done");
+			console.log(JSON.stringify(this.counter));
+		}
+	}
 }

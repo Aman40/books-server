@@ -110,7 +110,7 @@ function send_session_data(req, res){
 	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	req.session.save((err)=>{
 		if(err) {
-			console.log(`Error: ${err.message}`)
+			console.log(`Error: ${err.message}`);
 			res.write("<msg>Error connection refused</msg>");
 			res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`);
 			res.statusCode = 500;

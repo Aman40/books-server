@@ -184,7 +184,7 @@ router.post("/alter/add", function (req, res) {
 			fields.thumbnail,
 		]];
 
-		con.query(sql, [form_fields], (err, result)=>{
+		con.query(sql, [form_fields], (err)=>{
 			if(err) {
 				console.log(err);
 
@@ -276,7 +276,7 @@ router.post("/alter/edit", function (req, res) {
 			book_id
 		];
 
-		con.query(sql, form_fields, (err, result)=>{
+		con.query(sql, form_fields, (err)=>{
 			if(err) {
 				console.log(err);
 				console.log(con.query);
@@ -319,6 +319,46 @@ router.post("/alter/edit", function (req, res) {
 			res.write("<msg>Successfully added the book!</msg>");
 			res.end("<srv_res_status>0</srv_res_status>");
 		});
+	});
+});
+
+router.use("/alter/delete", function(req, res){
+	/**
+	 * srv_res_statuses:
+	 * 0. successfully completed
+	 * 1. mysql error with connection to db
+	 */
+	// res.write("<?xml version='1.0' encoding='UTF-8' ?>");
+	// res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
+	let bookIDs = url.parse(req.url, true).query;
+	//Instantiate the BookDeleteManager
+	let bdm = new BookDeleteManager(bookIDs.length);
+
+	const con = mysql.createConnection({
+		host: "localhost",
+		user: "aman",
+		password: "password",
+		database: "books"
+	});
+	con.connect((err)=>{
+		if(err) {
+			let resObj = {};
+			resObj.srv_res_status = 0;
+			resObj.msg = "Connection to db failed";
+			res.write(JSON.stringify(resObj));
+			res.end();
+		}
+
+		for(let i=0;i<bookIDs.length;i++) {
+			//Delete one by one
+			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
+			con.query(sql, (err, result)=>{
+				if(err) {
+					//Report a failure
+					
+				}
+			});
+		}
 	});
 });
 
@@ -372,7 +412,7 @@ router.use("/fetch", (req,res)=>{
 				console.log("Err Name: "+err.name);
 				console.log("Err Msg: "+err.msg);
 				for(let i in err) {
-					console.log(`Err.${i} = ${err[i]}`)
+					console.log(`Err.${i} = ${err[i]}`);
 				}
 				res.write("<srv_res_status>4</srv_res_status>");
 				res.write(`<err>${err.name}</err>`);
@@ -398,7 +438,7 @@ router.use("/fetch", (req,res)=>{
 	});
 });
 
-router.use("/images/upload", (req, res, next)=>{
+router.use("/images/upload", (req, res)=>{
 	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	res.statusCode = 200;
 	res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
@@ -457,7 +497,7 @@ router.use("/images/upload", (req, res, next)=>{
 					} else {
 						//Emit an event if completion events
 						//Catch the event for when the last file is done
-						conn.query(sql, [form_fields], (err, result)=>{
+						conn.query(sql, [form_fields], (err)=>{
 							if(err) { //Mysql error
 								console.log(err);
 								am.emit("error", err, res, "add_img");
@@ -513,7 +553,7 @@ router.use("/images/delete", (req, res)=>{
 			// Defence: For each of the images, check the length = 13 characters. //LATER
 			//Also append BookID so only said user's images are deleted
 			let sql = "DELETE FROM BookImgs WHERE ImgID='"+fields[i]+"'";
-			con.query(sql, (err, result)=>{
+			con.query(sql, (err)=>{
 				if(err) {
 					am.emit("error", err, res, "del_img");
 				}  else {
@@ -524,7 +564,7 @@ router.use("/images/delete", (req, res)=>{
 	});
 });
 
-router.use("/all", (req, res, next)=>{
+router.use("/all", (req, res)=>{
 	//Fetches all the books, not specific to any user. In future, this will be tailored according to location of the client.
 	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
@@ -716,7 +756,7 @@ function AsyncUploadManager(total_file_count){
 	this.em.on("error", (restArgs)=>{
 		//The operation ended halfway only after moving the file. The query wasn't performed
 		//Mysql error
-		let err = restArgs[0];
+		// let err = restArgs[0];
 		let res = restArgs[1];
 		let ctx = restArgs[2];
 		console.log("An error occurred: "+restArgs[0]);
@@ -823,6 +863,44 @@ function refactor_book_results(Books, result, curr_book, _tmpBook) {
 		}
 	}
 }
+
+class BookDeleteManager {
+	/**
+	 * This is not really necessary but helps running the delete queries in a for loop.
+	 * It keeps track of the total number of queries completed, number of successes
+	 * and number of failures. 
+	 * Normally, the request would return after a single error because all the steps in
+	 * processing the request are sequential and in a waterfall pattern, meaning a 
+	 * failure at one point triggers the domino effect down the line.
+	 * In this case though, a db query single failure (unless it's a connection failure) 
+	 * shouldn't be able to stop processing of the request because the queries are 
+	 * independent of each other. 
+	 * So when an error occurs, simply take note of it and continue processing other db
+	 * queries. When EVERYTHING is done, report what succeeded and what failed.
+	 */
+	constructor(numberOfQueries){
+		this._queryCount = numberOfQueries; //The total number of books to delete
+		this.counter = {
+			completed: 0,
+			succeeded: 0,
+			failed: 0,
+		};
+	}
+	succeeded = ()=>{
+		//Increment the number of succeeded queries then check if we're done
+		this.counter.completed++;
+		this.counter.succeeded++;
+	}
+	failed = ()=>{
+		//Increment the number of failed queries then check if we're done
+		this.counter.completed++;
+		this.counter.failed++;
+	}
+	weAreDone = ()=>{
+		return this.counter.completed === this._queryCount;
+	}
+}
+
 module.exports = router;
 //DESCRIPTION OF EXIT CODES/RETURN STATUSES srv_res_status
 //0: Success

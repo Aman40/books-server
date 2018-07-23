@@ -363,6 +363,7 @@ router.use("/delete", function(req, res){
 		for(let i=0;i<bookIDs.length;i++) {
 			//Delete one by one
 			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
+			console.log(sql);
 			con.query(sql, (err, result)=>{
 				if(err) {
 					//Report a failure

@@ -363,7 +363,7 @@ router.use("/delete", function(req, res){
 		for(let i=0;i<bookIDs.length;i++) {
 			//Delete one by one
 			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
-			console.log(sql);
+			// console.log(sql);
 			con.query(sql, (err, result)=>{
 				if(err) {
 					//Report a failure
@@ -371,8 +371,24 @@ router.use("/delete", function(req, res){
 					bdm.failed();
 				} else {
 					//Success. Check the result
-					console.log(JSON.stringify(result));
-					bdm.succeeded();
+					// console.log(JSON.stringify(result));
+					let resultObj = JSON.parse(result);
+					//check the result object to determine if any rows were affected.
+					//{"fieldCount":0,
+					//"affectedRows":1,
+					//"insertId":0,
+					//"serverStatus":2,
+					//"warningCount":0,
+					//"message":"",
+					//"protocol41":true,
+					//"changedRows":0}
+					if(resultObj.affectedRows===1) {
+						bdm.succeeded();
+					} else {
+						//Actually, non-existant. Very unlikely to happen with good
+						//Programming (which I do, btw)
+						bdm.failed();
+					}
 				}
 				//If all queries are done, return
 				if(bdm.weAreDone()){

@@ -363,13 +363,14 @@ router.use("/delete", function(req, res){
 		for(let i=0;i<bookIDs.length;i++) {
 			//Delete one by one
 			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
-			con.query(sql, (err)=>{
+			con.query(sql, (err, result)=>{
 				if(err) {
 					//Report a failure
-					console.log(err);
+					console.log(JSON.stringify(err));
 					bdm.failed();
 				} else {
-					//Success
+					//Success. Check the result
+					console.log(JSON.stringify(result));
 					bdm.succeeded();
 				}
 				//If all queries are done, return

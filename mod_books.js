@@ -352,6 +352,7 @@ router.use("/delete", function(req, res){
 	});
 	con.connect((err)=>{
 		if(err) {
+			console.log(err);
 			let resObj = {};
 			resObj.srv_res_status = 0;
 			resObj.msg = "Connection to db failed";
@@ -365,6 +366,7 @@ router.use("/delete", function(req, res){
 			con.query(sql, (err)=>{
 				if(err) {
 					//Report a failure
+					console.log(err);
 					bdm.failed();
 				} else {
 					//Success

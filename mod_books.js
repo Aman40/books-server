@@ -361,7 +361,7 @@ router.use("/alter/delete", function(req, res){
 		for(let i=0;i<bookIDs.length;i++) {
 			//Delete one by one
 			let sql = "DELETE FROM Books WHERE BookID='"+bookIDs[i]+"'";
-			con.query(sql, (err, result)=>{
+			con.query(sql, (err)=>{
 				if(err) {
 					//Report a failure
 					bdm.failed();
@@ -895,7 +895,7 @@ function refactor_book_results(Books, result, curr_book, _tmpBook) {
 	}
 }
 
-class BookDeleteManager {
+function BookDeleteManager(numberOfQueries) {
 	/**
 	 * This is not really necessary but helps running the delete queries in a for loop.
 	 * It keeps track of the total number of queries completed, number of successes
@@ -909,27 +909,26 @@ class BookDeleteManager {
 	 * So when an error occurs, simply take note of it and continue processing other db
 	 * queries. When EVERYTHING is done, report what succeeded and what failed.
 	 */
-	constructor(numberOfQueries){
-		this._queryCount = numberOfQueries; //The total number of books to delete
-		this.counter = {
-			completed: 0,
-			succeeded: 0,
-			failed: 0,
-		};
-	}
-	succeeded = ()=>{
+	this._queryCount = numberOfQueries; //The total number of books to delete
+	this.counter = {
+		completed: 0,
+		succeeded: 0,
+		failed: 0,
+	};
+
+	this.succeeded = ()=>{
 		//Increment the number of succeeded queries then check if we're done
 		this.counter.completed++;
 		this.counter.succeeded++;
-	}
-	failed = ()=>{
+	};
+	this.failed = ()=>{
 		//Increment the number of failed queries then check if we're done
 		this.counter.completed++;
 		this.counter.failed++;
-	}
-	weAreDone = ()=>{
+	};
+	this.weAreDone = ()=>{
 		return this.counter.completed === this._queryCount;
-	}
+	};
 }
 
 module.exports = router;

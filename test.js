@@ -32,29 +32,29 @@ for(let i=0;i<5;i++) {
 }
 
 function Manager(total){
-    this.counter = {
-	total: total,
-	completed: 0,
-	succeeded: 0,
-	failed: 0,
-	}
+	this.counter = {
+		total: total,
+		completed: 0,
+		succeeded: 0,
+		failed: 0,
+	};
 	this.succeeded = ()=>{
 		this.counter.succeeded++;
 		this.counter.completed++;
 		this.finishIfWeAreDone();
-	}
+	};
 	this.failed = ()=>{
 		this.counter.failed++;
 		this.counter.completed++;
 		this.finishIfWeAreDone();
-	}
+	};
 	this.weAreDone = ()=>{
 		return this.counter.total === this.counter.completed;
-	}
+	};
 	this.finishIfWeAreDone = ()=>{
 		if(this.weAreDone()){
 			console.log("We are done");
 			console.log(JSON.stringify(this.counter));
 		}
-	}
+	};
 }

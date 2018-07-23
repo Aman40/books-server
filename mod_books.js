@@ -334,7 +334,7 @@ router.use("/alter/delete", function(req, res){
 	// res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
 	//Expect a stringified array of bookids to delete
 	//e.g ['bookid1', 'bookid2', ..., 'bookidN']
-	let bookIDs = JSON.parse(url.parse(req.url, true).query);
+	let bookIDs = JSON.parse(url.parse(req.url, true).query).booksArr;
 	/**
 		 * Instantiate the manager. While the queries are all triggered
 		 * nearly in parallel and asynchronously, they'll still refer

@@ -372,7 +372,6 @@ router.use("/delete", function(req, res){
 				} else {
 					//Success. Check the result
 					// console.log(JSON.stringify(result));
-					let resultObj = JSON.parse(result);
 					//check the result object to determine if any rows were affected.
 					//{"fieldCount":0,
 					//"affectedRows":1,
@@ -382,7 +381,7 @@ router.use("/delete", function(req, res){
 					//"message":"",
 					//"protocol41":true,
 					//"changedRows":0}
-					if(resultObj.affectedRows===1) {
+					if(result.affectedRows===1) {
 						bdm.succeeded();
 					} else {
 						//Actually, non-existant. Very unlikely to happen with good

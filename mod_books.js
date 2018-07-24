@@ -45,7 +45,7 @@ router.post("/alter/*", [ /*Validate form*/
 	check("binding")
 		.optional({nullable: true, checkFalsy: true})
 		.withMessage("ER_NO_BINDING")
-		.isIn(["paperback", "hardBinding"])
+		.isIn(["paperback", "hardcover"])
 		.withMessage("ER_ILLEGAL_OP"),
 	check("pages")
 		.optional({nullable: true, checkFalsy: true})

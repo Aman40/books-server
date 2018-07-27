@@ -6,13 +6,30 @@ const router = express.Router();
 const formidable = require("formidable");
 const bcrypt = require("bcryptjs");
 const mysql = require("mysql");
+const { check } = require("express-validator/check");
+
+router.use("/in", [
+	check("email")
+		.trim()
+		.escape()
+], (req, res, next)=>{
+	next();
+});
 
 router.use("/in", function (req, res) {
+	/**
+	 * RESPONSE STATUSES FOR THIS PATH
+	 * 0: Success
+	 * 1: Wrong password
+	 * 3: Wrong email address
+	 * 4: Internal error (Problem with query syntax or some shit)
+	 * 6: Internal error. (Error while comparing/Connection error)
+	 */
 	res.writeHead(200, {"Content-Type":"text/html", "Access-Control-Allow-Origin": "http://localhost:3000"});
 	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
 	res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV.
 	let form = new formidable.IncomingForm();
-	form.parse(req, (err, fields, files)=>{
+	form.parse(req, (err, fields)=>{
 		if(err) {
 			console.log(err.name);
 			console.log(err.message);
@@ -34,21 +51,27 @@ router.use("/in", function (req, res) {
 			}
 			let sql = `SELECT * FROM Users WHERE Email = '${fields.email}'`;
 			conn.query(sql, (err, result)=>{
+				console.log(`Query result: ${JSON.stringify(result)}`);
 				if(err) {
+					console.log("The query failed");
 					console.log(err.name);
 					console.log(err.message);
 					res.write("<msg>An sql related error occurred.</msg>");
 					res.end("<srv_res_status>4</srv_res_status>");
 					return;
 				}
-				if(result.affectedRows===0) {
+				if(result.length===0) {
+					console.log("No account with that email address");
 					res.write("<msg>No such email was found</msg>");
 					res.end("<srv_res_status>3</srv_res_status>");
+					return;
 				} else {
 					//Compare passwords
+					console.log("Comparing passwords");
 					let hash = result[0].UserPassword;
 					bcrypt.compare(fields.password, hash, (err, check_result)=>{
 						if(err) {
+							console.log("Error while comparing");
 							console.log(err.name);
 							console.log(err.message);
 							res.end("<srv_res_status>6</srv_res_status>");
@@ -75,6 +98,7 @@ router.use("/in", function (req, res) {
 							res.end("<srv_res_status>0</srv_res_status>");
 						} else {
 							//failure
+							console.log("Password is wrong!");
 							res.write("<msg>Password error</msg>");
 							res.end("<srv_res_status>1</srv_res_status>");
 						}
@@ -91,12 +115,3 @@ router.use("/out", function (req, res) {
 });
 
 module.exports = router;
-//DESCRIPTION OF EXIT CODES/RETURN STATUSES srv_res_status
-//0: Success
-//1: Duplicate entry of email or alias
-//2: Illegal characters in input
-//3: No results found
-//4: Query error
-//5: Connect error
-//6: Other system errors
-//7: Passwords don't match

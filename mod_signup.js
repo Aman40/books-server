@@ -117,7 +117,7 @@ router.post("/", function (req, res) {
 				fields.about,
 				fields.student==="true"?1:0,
 				fields.school,
-				fields.schoolzip]];
+				fields.schoolzip?fields.schoolzip:""]];
 
 			con.query(sql, [form_fields], (err, result)=>{
 				if(err) {

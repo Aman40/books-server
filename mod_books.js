@@ -11,6 +11,8 @@ const url = require("url");
 const formidable = require("formidable");
 const fs = require("fs");
 const events = require("events");
+const PDFDocument = require("pdfkit");
+// const fontkit = require("fontkit");
 
 router.post("/alter/*", checkSession);
 
@@ -415,77 +417,22 @@ router.use("/delete", function(req, res){
 
 router.use("/fetch", (req,res)=>{
 	//Fetches only logged in user's books
-	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
-	res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
-	//Fetch 25 - 50 books at a time depending on how many the user specifies with
-	//The "show" filter
-	const con = mysql.createConnection({
-		host: "localhost",
-		user: "aman",
-		password: "password",
-		database: "books"
-	});
-
-	con.connect((err)=>{
-		if(err) {
-			console.log("Couldn't connect to the db");
-			//Return appropriate error to user. TODO LATER
+	getMyBooks(req, res, (result)=>{
+		if(result.length===0) {
+			//User has no books to show :(
+			console.log("/fetch is empty!");
+			res.write("<srv_res_status>3</srv_res_status>");
+			res.end("<msg>No results found</msg>");
+			return;
+		} else {
+			let Books = [];
+			let _tmpBook = {};
+			_tmpBook.images = [];
+			let curr__book = result.pop();
+			res.write(`<bks_info>${JSON.stringify(refactor_book_results(Books, result, curr__book, _tmpBook))}</bks_info>`);
+			res.write("<msg>Got your books, boss! Dev</msg>");
+			res.end("<srv_res_status>0</srv_res_status>");
 		}
-
-		const fetch_max = 25; //Others will be 50, 75, 100, all specified by the client.
-		const sql = "SELECT Transient.BookID AS BookID," +
-            "Transient.UserID AS UserID," +
-            "Transient.Title AS Title," +
-            "Transient.Edition AS Edition," +
-            "Transient.Authors AS Authors," +
-            "Transient.Description AS Description," +
-            "Transient.Language as Language,"+
-            "Transient.Binding AS Binding," +
-            "Transient.PageNo AS PageNo," +
-            "Transient.Publisher AS Publisher," +
-            "Transient.Published AS Published," +
-			"Transient.ISBN as ISBN," +
-			"Transient.Condition AS `Condition`," +
-			"Transient.Location AS Location," +
-            "Transient.DateAdded AS DateAdded," +
-            "Transient.OfferExpiry AS OfferExpiry," +
-			"Transient.BookSerial AS BookSerial," +
-			"Transient.Thumbnail AS Thumbnail," +
-            "BookImgs.ImageURI AS ImageURI," +
-            "BookImgs.ImgID AS ImgID FROM (SELECT * FROM (SELECT * FROM `Books` " +
-            "WHERE `UserID`='"+req.session.uid+"') AS TempTable ORDER BY `BookSerial` " +
-            "DESC LIMIT "+fetch_max+") AS Transient LEFT JOIN " +
-            "BookImgs ON Transient.BookID=BookImgs.BookID ORDER BY Transient.BookSerial";
-		con.query(sql, (err, result)=>{
-			if(err) {
-				//Errors unrelated to the user
-				console.log("An error with the sql");
-				console.log("Err Name: "+err.name);
-				console.log("Err Msg: "+err.msg);
-				for(let i in err) {
-					console.log(`Err.${i} = ${err[i]}`);
-				}
-				res.write("<srv_res_status>4</srv_res_status>");
-				res.write(`<err>${err.name}</err>`);
-				res.end(`<err>${err.message}</err>`); //Perhaps attempted SQL injection?
-				return;
-			}
-			if(result.length===0) {
-				//User has no books to show :(
-				console.log("/fetch is empty!");
-				res.write("<srv_res_status>3</srv_res_status>");
-				res.end("<msg>No results found</msg>");
-				return;
-			} else {
-				let Books = [];
-				let _tmpBook = {};
-				_tmpBook.images = [];
-				let curr__book = result.pop();
-				res.write(`<bks_info>${JSON.stringify(refactor_book_results(Books, result, curr__book, _tmpBook))}</bks_info>`);
-				res.write("<msg>Got your books, boss! Dev</msg>");
-				res.end("<srv_res_status>0</srv_res_status>");
-			}
-		});
 	});
 });
 
@@ -831,6 +778,105 @@ function AsyncUploadManager(total_file_count){
 	};
 }
 
+router.use("/generatePDF", (req, res)=>{
+	/**
+	 * This route gets all the user's books fromt the database and generates a 
+	 * pdf catalog for download
+	 */
+	//fetch the books from the db
+	getMyBooks(req, res, (result)=>{
+		if(result.length===0) {
+			//User has no books to show :(
+			//Now we generate the pdf
+			
+			console.log("/fetch is empty!");
+			res.write("<srv_res_status>3</srv_res_status>");
+			res.end("<msg>No results found</msg>");
+			return;
+		} else {
+			let Books = [];
+			let _tmpBook = {};
+			_tmpBook.images = [];
+			let curr__book = result.pop();
+			let booksArr = refactor_book_results(Books, result, curr__book, _tmpBook); //Array of book objects
+			//Generate pdf
+			// let docPath = "./files/testfile.pdf";
+
+			// let doc = new PDFDocument();
+			// doc.pipe = fs.createWriteStream(docPath);
+			// doc.font("fonts/PalatinoBold.ttf")
+			// 	.fontSize(25)
+			// 	.text("Some text with an embedded font!", 100, 100);
+
+			// // # Add another page
+			// doc.addPage()
+			// 	.fontSize(25)
+			// 	.text("Here is some vector graphics...", 100, 100);
+
+			// // # Draw a triangle
+			// doc.save()
+			// 	.moveTo(100, 150)
+			// 	.lineTo(100, 250)
+			// 	.lineTo(200, 250)
+			// 	.fill("#FF3300");
+
+			// // # Apply some transforms and render an SVG path with the 'even-odd' fill rule
+			// doc.scale(0.6)
+			// 	.translate(470, -380)
+			// 	.path("M 250,75 L 323,301 131,161 369,161 177,301 z")
+			// 	.fill("red", "even-odd")
+			// 	.restore();
+
+			// // # Add some text with annotations
+			// doc.addPage()
+			// 	.fillColor("blue")
+			// 	.text("Here is a link!", 100, 100)
+			// 	.underline(100, 100, 160, 27, {color: "#0000FF"})
+			// 	.link(100, 100, 160, 27, "http://google.com/");
+
+			// # Finalize PDF file
+			// doc.end();
+
+			//Generate txt file until we figure out what's going on.
+			// let data = [
+			// 	"If you think about it, my level of productivity\n",
+			// 	"is nearly constant\n",
+			// 	"if I drink coffee today\n",
+			// 	"and get into hyperproductive mode, \n",
+			// 	"the next day I'll be just productive enough that\n",
+			// 	"the average productivity of the two days\n",
+			// 	"is just my standard productivity\n",
+			// 	"Interesting theory, innit?"
+			// ];
+			
+			try{
+				let docPath = `./files/${req.session.uid}.txt`;
+				let fd = fs.openSync(docPath,"w");
+				fs.appendFileSync(fd, `Alias name: ${req.session.alias}\n`);
+				fs.appendFileSync(fd, `Number of books: ${booksArr.length}\n`);
+				for(let i=0; i<booksArr.length; i++){
+					fs.appendFileSync(fd, `Book number #${i}\n`);
+					Object.getOwnPropertyNames(booksArr[i]).forEach((prop)=>{
+						fs.appendFileSync(fd, `${prop}\t: ${JSON.stringify(booksArr[i][prop])}\n`);
+					});
+					fs.appendFileSync(fd, "*******************************************************\n\n");
+				}
+				fs.closeSync(fd);
+				//Download pdf.
+				// res.write(JSON.stringify(booksArr));
+				res.write(`<filename>${req.session.uid}.txt</filename>`);
+				res.end("<srv_res_status>0</srv_res_status>");
+			} catch(err) {
+				res.write(`File creation failed with an error ${JSON.stringify(err)}</msg>`);
+				res.end("<srv_res_status>6</srv_res_status>");
+			}
+		}
+	});
+	//generate the pdf file
+
+	//download the file
+});
+
 function genUid(char) {
 	//This is meant to function as the php uid(index) function, generating a 14 character uid starting with the
 	//provided index. If I get more of such I'll create a separate module
@@ -843,13 +889,78 @@ function genUid(char) {
 	return char+_tmp.toString().slice(0,13); //Get 13 characters, concat the first char = 14 characters;
 }
 
+function getMyBooks(req, res, callback){
+	//Fetches only logged in user's books
+	res.write("<?xml version='1.0' encoding='UTF-8' ?>");
+	res.write(`<cookie>${res.getHeader("Set-Cookie")}</cookie>`); //DEV
+	//Fetch 25 - 50 books at a time depending on how many the user specifies with
+	//The "show" filter
+	const con = mysql.createConnection({
+		host: "localhost",
+		user: "aman",
+		password: "password",
+		database: "books"
+	});
+
+	con.connect((err)=>{
+		if(err) {
+			console.log("Couldn't connect to the db");
+			//Return appropriate error to user. TODO LATER
+		}
+
+		const fetch_max = 25; //Others will be 50, 75, 100, all specified by the client.
+		const sql = "SELECT Transient.BookID AS BookID," +
+            "Transient.UserID AS UserID," +
+            "Transient.Title AS Title," +
+            "Transient.Edition AS Edition," +
+            "Transient.Authors AS Authors," +
+            "Transient.Description AS Description," +
+            "Transient.Language as Language,"+
+            "Transient.Binding AS Binding," +
+            "Transient.PageNo AS PageNo," +
+            "Transient.Publisher AS Publisher," +
+            "Transient.Published AS Published," +
+			"Transient.ISBN as ISBN," +
+			"Transient.Condition AS `Condition`," +
+			"Transient.Location AS Location," +
+            "Transient.DateAdded AS DateAdded," +
+            "Transient.OfferExpiry AS OfferExpiry," +
+			"Transient.BookSerial AS BookSerial," +
+			"Transient.Thumbnail AS Thumbnail," +
+            "BookImgs.ImageURI AS ImageURI," +
+            "BookImgs.ImgID AS ImgID FROM (SELECT * FROM (SELECT * FROM `Books` " +
+            "WHERE `UserID`='"+req.session.uid+"') AS TempTable ORDER BY `BookSerial` " +
+            "DESC LIMIT "+fetch_max+") AS Transient LEFT JOIN " +
+            "BookImgs ON Transient.BookID=BookImgs.BookID ORDER BY Transient.BookSerial";
+		con.query(sql, (err, result)=>{
+			if(err) {
+				//Errors unrelated to the user
+				console.log("An error with the sql");
+				console.log("Err Name: "+err.name);
+				console.log("Err Msg: "+err.msg);
+				for(let i in err) {
+					console.log(`Err.${i} = ${err[i]}`);
+				}
+				res.write("<srv_res_status>4</srv_res_status>");
+				res.write(`<err>${err.name}</err>`);
+				res.end(`<err>${err.message}</err>`); //Perhaps attempted SQL injection?
+				return;
+			}
+			callback(result);
+		});
+	});
+}
+
 function refactor_book_results(Books, result, curr_book, _tmpBook) {
+	/**
+	 * The query returns result rows as an array. Only the ImageURIs are unique from
+	 * row to row, so a single book with 5 images will have 5 rows. This function
+	 * refactors the 5 rows into one object with an \images\ property as an array
+	 * of image objects. 
+	 * In effect, the result is modified into an array of unique book objects
+	 */
 
 	//Pop the first book prior, into curr_book
-	//Books is the array of objects to return [{}{}{}{}], each object a single
-	//book with a property "images" containing book's images as an object/array.
-	//result is an array of Book objects, some similar, only differeing on ImgID and ImgURI
-
 	let nxt_book = result.pop();
 
 	if(!nxt_book) {

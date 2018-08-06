@@ -78,11 +78,12 @@ app.use("/books", books);
 app.use("/contact", express.static("./files"));
 app.use("/about", express.static("./files"));
 app.use("/images", express.static("./images"));
+app.use("/pdf_download", express.static("./files"));
 app.use("/signup", signup);
 app.use("/log", login);
 app.use("/",send_session_data);
 //Set up routers to each of those modules
-app.listen(80);
+app.listen(8000);
 //callback for destroying session
 function logout(req, res) {
 	req.session.save((err)=>{

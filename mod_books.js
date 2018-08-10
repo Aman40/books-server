@@ -150,8 +150,15 @@ router.post("/alter/add", function (req, res) {
 		database: "books"
 	});
 	con.connect((err)=>{
-		if(err) throw err; //Replace with a solution that won't crash the app
-		let sql = "INSERT INTO Books(`UserID`,`BookID`, `Title`, `Edition`, `Authors`, `Language`," +
+		if(err) {
+			console.log("Connection failed:");
+			console.log(err.name);
+			console.log(err.message);
+			res.end("<srv_res_status>6</srv_res_status>");
+			return;
+			// throw err; //Replace with a solution that won't crash the app
+	}
+	let sql = "INSERT INTO Books(`UserID`,`BookID`, `Title`, `Edition`, `Authors`, `Language`," +
             " `Description`," +
             "`Binding`, `PageNo`, `Publisher`, `Published`, `ISBN`, `Condition`," +
             "`Location` , `DateAdded`, `OfferExpiry`, `Thumbnail`) VALUES ?";
@@ -243,7 +250,13 @@ router.post("/alter/edit", function (req, res) {
 		database: "books"
 	});
 	con.connect((err)=>{
-		if(err) throw err; //Replace with a solution that won't crash the app
+		if(err){
+			console.log("Connection failed:");
+			console.log(err.name);
+			console.log(err.message);
+			res.end("<srv_res_status>6</srv_res_status>");
+			return;
+		} //throw err; //Replace with a solution that won't crash the app
 		//Modify data for mysql. E.g true/false => 1/0
 		if(!fields.edition) fields.edition=1;
 		fields.is_new = fields.is_new==="true"?1:0;
@@ -455,8 +468,9 @@ router.use("/images/upload", (req, res)=>{
 	});
 	conn.connect((err)=>{
 		if(err) {
+			console.log("Connection failed:");
 			console.log(err.name);
-			console.log(err.message);"";
+			console.log(err.message);
 			res.end("<srv_res_status>6</srv_res_status>");
 			return;
 		}
@@ -536,6 +550,7 @@ router.use("/images/delete", (req, res)=>{
 
 	con.connect((err)=>{
 		if(err) {
+			console.log("Connection to mysql server failed");
 			console.log(err.name);
 			console.log(err.message);"";
 			res.end("<srv_res_status>6</srv_res_status>");
@@ -576,7 +591,12 @@ router.use("/all", (req, res)=>{
 	});
 	con.connect((err)=>{
 		if(err) {
-			console.log("Couldn't connect to the db");
+			console.log("Connection to mysql server failed:");
+			console.log(err.name);
+			console.log(err.message);
+			res.end("<srv_res_status>6</srv_res_status>");
+			return;
+			// console.log("Couldn't connect to the db");
 			//Return appropriate error to user. TODO LATER
 		}
 
@@ -650,7 +670,12 @@ router.use("/search", (req, res)=>{
 	});
 	con.connect((err)=>{
 		if(err) {
-			console.log("Couldn't connect to the db");
+			console.log("Connection to mysql server failed:");
+			console.log(err.name);
+			console.log(err.message);
+			res.end("<srv_res_status>6</srv_res_status>");
+			return;
+			// console.log("Couldn't connect to the db");
 			//Return appropriate error to user. TODO LATER
 		}
 		const query = url.parse(req.url, true).query.query;
@@ -904,7 +929,12 @@ function getMyBooks(req, res, callback){
 
 	con.connect((err)=>{
 		if(err) {
-			console.log("Couldn't connect to the db");
+			console.log("Connection to mysql server failed:");
+			console.log(err.name);
+			console.log(err.message);
+			res.end("<srv_res_status>6</srv_res_status>");
+			return;
+			// console.log("Couldn't connect to the db");
 			//Return appropriate error to user. TODO LATER
 		}
 
